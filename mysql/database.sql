@@ -29,6 +29,7 @@ CREATE TABLE thesis (
     cancellation_reason TEXT,
     presentation_date DATETIME,
     presentation_location VARCHAR(255),
+    grade INT CHECK (grade BETWEEN 0 AND 10),
     repository_url VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (supervison_id) REFERENCES users(id),
@@ -47,27 +48,36 @@ CREATE TABLE thesis_files (
     FOREIGN KEY (uploader_id) REFERENCES users(id)
 );
 
-CREATE TABLE committee_members (
+
+CREATE TABLE Committee_Invitations (
+    id INT PRIMARY KEY AUTO_INCREMENT,
     thesis_id INT NOT NULL,
-    professor_id INT NOT NULL,
-    grade DECIMAL(4,2),  
-    grade_details JSON,  
-    PRIMARY KEY (thesis_id, professor_id),
+    invited_professor_id INT NOT NULL,
+    status ENUM('pending', 'accepted', 'declined') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    response_date TIMESTAMP NULL,
     FOREIGN KEY (thesis_id) REFERENCES thesis(id),
-    FOREIGN KEY (professor_id) REFERENCES users(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
+    FOREIGN KEY (invited_professor_id) REFERENCES users(id)
 );
 
-DELIMITER $$
-CREATE TRIGGER check_professor_role_before_insert
-BEFORE INSERT ON committee_members
-FOR EACH ROW
-BEGIN
-    IF (SELECT role FROM users WHERE id = NEW.professor_id) != 'professor' THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'professor_id must reference a user with role professor';
-    END IF;
-END$$
-DELIMITER ;
+CREATE TABLE Committee_Members (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    thesis_id INT NOT NULL,
+    professor_id INT NOT NULL,
+    role ENUM('supervisor', 'member') NOT NULL,
+    grade INT CHECK (grade BETWEEN 0 AND 10),
+    grade_details TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (thesis_id) REFERENCES thesis(id),
+    FOREIGN KEY (professor_id) REFERENCES users(id)
+);
 
+CREATE TABLE Progress_Notes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    thesis_id INT NOT NULL,
+    author_id INT NOT NULL,
+    note TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (thesis_id) REFERENCES thesis(id),
+    FOREIGN KEY (author_id) REFERENCES users(id)
+);
