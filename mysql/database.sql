@@ -72,6 +72,18 @@ CREATE TABLE Committee_Members (
     FOREIGN KEY (professor_id) REFERENCES users(id)
 );
 
+DELIMITER $$
+CREATE TRIGGER check_professor_role_before_insert
+BEFORE INSERT ON committee_members
+FOR EACH ROW
+BEGIN
+    IF (SELECT role FROM users WHERE id = NEW.professor_id) != 'professor' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'professor_id must reference a user with role professor';
+    END IF;
+END$$
+DELIMITER ;
+
 CREATE TABLE Progress_Notes (
     id INT PRIMARY KEY AUTO_INCREMENT,
     thesis_id INT NOT NULL,
