@@ -47,3 +47,27 @@ CREATE TABLE thesis_files (
     FOREIGN KEY (uploader_id) REFERENCES users(id)
 );
 
+CREATE TABLE committee_members (
+    thesis_id INT NOT NULL,
+    professor_id INT NOT NULL,
+    grade DECIMAL(4,2),  
+    grade_details JSON,  
+    PRIMARY KEY (thesis_id, professor_id),
+    FOREIGN KEY (thesis_id) REFERENCES thesis(id),
+    FOREIGN KEY (professor_id) REFERENCES users(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+DELIMITER $$
+CREATE TRIGGER check_professor_role_before_insert
+BEFORE INSERT ON committee_members
+FOR EACH ROW
+BEGIN
+    IF (SELECT role FROM users WHERE id = NEW.professor_id) != 'professor' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'professor_id must reference a user with role professor';
+    END IF;
+END$$
+DELIMITER ;
+
