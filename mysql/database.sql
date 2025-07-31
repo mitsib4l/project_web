@@ -1,4 +1,6 @@
-CREATE DATABASE IF NOT EXISTS `{{ project_web }}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS project_web DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE project_web;
 
 CREATE TABLE users (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -22,7 +24,7 @@ CREATE TABLE thesis (
     description TEXT,
     description_pdf_url VARCHAR(500),
     status ENUM('under_assignment', 'active', 'under_review', 'completed', 'cancelled') NOT NULL DEFAULT 'under_assignment',
-    supervison_id INT NOT NULL,
+    supervisor_id INT NOT NULL,
     student_id INT NOT NULL,
     gs_approval_protocol VARCHAR(100),
     assignment_date DATE,
@@ -32,7 +34,7 @@ CREATE TABLE thesis (
     grade INT CHECK (grade BETWEEN 0 AND 10),
     repository_url VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (supervison_id) REFERENCES users(id),
+    FOREIGN KEY (supervisor_id) REFERENCES users(id),
     FOREIGN KEY (student_id) REFERENCES users(id)
 );
 
@@ -49,7 +51,7 @@ CREATE TABLE thesis_files (
 );
 
 
-CREATE TABLE Committee_Invitations (
+CREATE TABLE committee_invitations (
     id INT PRIMARY KEY AUTO_INCREMENT,
     thesis_id INT NOT NULL,
     invited_professor_id INT NOT NULL,
@@ -72,7 +74,7 @@ BEGIN
 END$$
 DELIMITER ;
 
-CREATE TABLE Committee_Members (
+CREATE TABLE committee_members (
     id INT PRIMARY KEY AUTO_INCREMENT,
     thesis_id INT NOT NULL,
     professor_id INT NOT NULL,
@@ -96,7 +98,7 @@ BEGIN
 END$$
 DELIMITER ;
 
-CREATE TABLE Progress_Notes (
+CREATE TABLE progress_notes (
     id INT PRIMARY KEY AUTO_INCREMENT,
     thesis_id INT NOT NULL,
     author_id INT NOT NULL,
@@ -105,3 +107,8 @@ CREATE TABLE Progress_Notes (
     FOREIGN KEY (thesis_id) REFERENCES thesis(id),
     FOREIGN KEY (author_id) REFERENCES users(id)
 );
+
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_thesis_student ON thesis(student_id);
+CREATE INDEX idx_thesis_supervisor ON thesis(supervisor_id);
