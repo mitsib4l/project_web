@@ -1,0 +1,4 @@
+Start the server by running this in cmd:
+node server.js (depends where server.js is located)
+
+link to go to: http://localhost:3000
