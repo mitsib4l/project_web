@@ -1,45 +1,32 @@
-const express = require('express');
-const db = require('./db');
+const express = require('express'); // Import express for routing
+const db = require('./db'); // Import database connection
+const authenticateToken = require('./middleware/authenticationToken'); // Import authentication middleware
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const authRoutes = require('./routes/auth'); // Import authentication routes
+const userRoutes = require('./routes/users'); // Import user routes
+const thesisRoutes = require('./routes/thesis'); // Import thesis routes
 
-// Middleware
-app.use(express.json());
+const app = express(); // Create an Express application
+const PORT = process.env.PORT || 3000; // Set the port for the server
 
-// Routes
-app.get('/', (req, res) => {
-    res.json({
-        message: 'Welcome to the Thesis Management System API',
-        endpoints: [
-            { method: 'GET', path: '/', description: 'API info' },
-            { method: 'GET', path: '/theses', description: 'List all theses' },
-            { method: 'POST', path: '/theses', description: 'Create a new thesis' },
-            // Πρόσθεσε εδώ όσα endpoints έχεις ή θα προσθέσεις
-        ],
-        documentation: 'Για περισσότερες πληροφορίες, επικοινωνήστε με τον διαχειριστή.'
-    });
+
+app.use(express.json()); 
+
+// Route usage
+app.use('/auth', authRoutes); // Use authentication routes
+app.use('/users', authenticateToken, userRoutes); // Use user routes with authentication
+app.use('/thesis', authenticateToken, thesisRoutes); // Use thesis routes with authentication
+
+// Παράδειγμα προστατευμένου route
+app.get('/profile', authenticateToken, async (req, res) => {
+    const [rows] = await db.pool.query(
+        'SELECT id, username, role FROM users WHERE id = ?',
+        [req.user.id]
+    );
+    res.json(rows[0]);
 });
 
-// Επιστρέφει όλα τα theses
-app.get('/thesis', async (req, res) => {
-    try {
-        const [rows] = await db.pool.query('SELECT * FROM thesis');
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: 'Database error', details: err.message });
-    }
-});
 
-// Επιστρέφει όλους τους users
-app.get('/users', async (req, res) => {
-    try {
-        const [rows] = await db.pool.query('SELECT * FROM users');
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: 'Database error', details: err.message });
-    }
-});
 
 // Connect to the database
 db.connectDB()

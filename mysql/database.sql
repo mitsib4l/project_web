@@ -7,11 +7,16 @@ CREATE TABLE users (
     name VARCHAR(100) NOT NULL,
     surname VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
-    username VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     topic VARCHAR(255),  
     landline VARCHAR(20),
     mobile VARCHAR(20),
+    street VARCHAR(255),
+    street_number VARCHAR(10),
+    city VARCHAR(100),
+    postal_code VARCHAR(20),
+    city VARCHAR(100),
+    country VARCHAR(100),
     department VARCHAR(100),
     university VARCHAR(150),
     role ENUM('student', 'professor', 'secretariat') NOT NULL,
@@ -37,6 +42,17 @@ CREATE TABLE thesis (
     FOREIGN KEY (supervisor_id) REFERENCES users(id),
     FOREIGN KEY (student_id) REFERENCES users(id)
 );
+-- Trigger to update assignment_date when status changes
+DELIMITER $$
+CREATE TRIGGER set_assignment_date_on_status_change
+BEFORE UPDATE ON thesis
+FOR EACH ROW
+BEGIN
+    IF OLD.status = 'under_assignment' AND NEW.status = 'active' THEN
+        SET NEW.assignment_date = NOW();
+    END IF;
+END$$
+DELIMITER ;
 
 CREATE TABLE thesis_files (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -109,6 +125,5 @@ CREATE TABLE progress_notes (
 );
 
 CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_thesis_student ON thesis(student_id);
 CREATE INDEX idx_thesis_supervisor ON thesis(supervisor_id);
