@@ -26,7 +26,10 @@ app.get('/profile', authenticateToken, async (req, res) => {
     res.json(rows[0]);
 });
 
-
+// Health check route
+app.get('/', (req, res) => {
+    res.send('API is running');
+});
 
 // Connect to the database
 db.connectDB()

@@ -1,5 +1,5 @@
 const express = require('express'); // Import express for routing
-const db = require('./db'); // Import database connection
+const db = require('../db');
 const router = express.Router(); // Create a new router instance
 const jwt = require('jsonwebtoken'); // Import JWT for token handling
 const bcrypt = require('bcrypt'); // Import bcrypt for password hashing
