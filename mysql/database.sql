@@ -15,7 +15,6 @@ CREATE TABLE users (
     street_number VARCHAR(10),
     city VARCHAR(100),
     postal_code VARCHAR(20),
-    city VARCHAR(100),
     country VARCHAR(100),
     department VARCHAR(100),
     university VARCHAR(150),
