@@ -14,7 +14,8 @@ router.post('/login', async (req, res) => {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
     const token = jwt.sign({ id: user.id, role: user.role }, SECRET, { expiresIn: '1h' });
-    res.json({ token });
+    // Επιστροφή και του ρόλου για χρήση στο frontend
+    res.json({ token, role: user.role });
 });
 
 // Logout endpoint (frontend simply deletes the token)
