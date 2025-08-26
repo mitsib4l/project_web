@@ -1,22 +1,33 @@
-const express = require('express'); // Import express for routing
-const db = require('./db'); // Import database connection
-const authenticateToken = require('./middleware/authenticationToken'); // Import authentication middleware
+const express = require('express');
+const path = require('path');
+const app = express();
+
+// Import database connection
+const db = require('./db'); 
+// Import authentication middleware
+const authenticateToken = require('./middleware/authenticationToken'); 
 
 const authRoutes = require('./routes/auth'); // Import authentication routes
-const loginRoutes = require('./routes/login');
+// const loginRoutes = require('./routes/login');
 const userRoutes = require('./routes/users'); // Import user routes
 const thesisRoutes = require('./routes/thesis'); // Import thesis routes
 const professorRoutes = require('./routes/professor');
 
-const app = express(); // Create an Express application
 const PORT = process.env.PORT || 3000; // Set the port for the server
-
 
 app.use(express.json()); 
 
+// Serve static files from frontend folder
+app.use(express.static(path.join(__dirname, 'frontend')));
+
+// Serve login.html for the root path
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'login.html'));
+});
+
 // Route usage
 app.use('/auth', authRoutes); // Use authentication routes
-app.use('/login', loginRoutes);
+// app.use('/login', loginRoutes);
 app.use('/users', authenticateToken, userRoutes); // Use user routes with authentication
 app.use('/thesis', authenticateToken, thesisRoutes); // Use thesis routes with authentication
 app.use('/professor', authenticateToken, professorRoutes); // Use professor routes with authentication
@@ -31,7 +42,7 @@ app.get('/profile', authenticateToken, async (req, res) => {
 });
 
 // Health check route
-app.get('/', (req, res) => {
+app.get('/health', (req, res) => {
     res.send('API is running');
 });
 
