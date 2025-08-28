@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <title>Καθηγητής - Πίνακας Ελέγχου</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div id="container">
+    <!-- Header similar to eclass.upatras.gr -->
+    <header id="header">
+      <div class="header-logo">
+        <img src="img/upatras-logo.png" alt="Upatras Logo" style="height:40px;">
+      </div>
+      <div class="header-title">
+        Πλατφόρμα Διπλωματικών Εργασιών - Καθηγητής
+      </div>
+      <div class="header-actions">
+        <button id="logout-btn" class="btn btn-logout">Αποσύνδεση</button>
+      </div>
+    </header>
+    <div id="main-content">
+      <!-- Sidebar navigation -->
+      <nav id="sidebar">
+        <ul>
+          <li><a href="#" onclick="showSection('topics')"><span class="icon">&#128196;</span> Θέματα προς Ανάθεση</a></li>
+          <li><a href="#" onclick="showSection('assign')"><span class="icon">&#128100;</span> Ανάθεση Θέματος</a></li>
+          <li><a href="#" onclick="showSection('theses')"><span class="icon">&#128218;</span> Λίστα Διπλωματικών</a></li>
+          <li><a href="#" onclick="showSection('invitations')"><span class="icon">&#128101;</span> Προσκλήσεις Τριμελούς</a></li>
+          <li><a href="#" onclick="showSection('stats')"><span class="icon">&#128202;</span> Στατιστικά</a></li>
+        </ul>
+      </nav>
+      <!-- Main dashboard area -->
+      <main id="dashboard">
+        <!-- 1. Προβολή & Δημιουργία θεμάτων προς ανάθεση -->
+        <section id="topics" style="display:none;">
+          <h2 class="section-title">Θέματα προς Ανάθεση</h2>
+          <form id="create-topic-form" enctype="multipart/form-data" class="form-block">
+            <label>Τίτλος:</label>
+            <input type="text" name="title" required>
+            <label>Σύνοψη:</label>
+            <textarea name="description" required></textarea>
+            <label>Αρχείο PDF:</label>
+            <input type="file" name="pdf" accept="application/pdf">
+            <button type="submit" class="btn btn-primary">Δημιουργία Θέματος</button>
+          </form>
+          <div id="topic-list" class="list-block">
+            <!-- Εδώ θα εμφανίζονται τα θέματα του καθηγητή -->
+          </div>
+        </section>
+        <!-- 2. Ανάθεση θέματος σε φοιτητή -->
+        <section id="assign" style="display:none;">
+          <h2 class="section-title">Ανάθεση Θέματος σε Φοιτητή</h2>
+          <form id="assign-topic-form" class="form-block">
+            <label>Αναζήτηση Φοιτητή (ΑΜ ή Ονοματεπώνυμο):</label>
+            <input type="text" name="student_search" required>
+            <button type="button" onclick="searchStudent()" class="btn btn-primary">Αναζήτηση</button>
+          </form>
+          <div id="student-results" class="list-block"></div>
+          <div id="assign-topic-list" class="list-block"></div>
+        </section>
+        <!-- 3. Προβολή λίστας διπλωματικών -->
+        <section id="theses" style="display:none;">
+          <h2 class="section-title">Λίστα Διπλωματικών</h2>
+          <div class="filters-block">
+            <label>Φίλτρο Κατάστασης:</label>
+            <select id="status-filter">
+              <option value="">Όλες</option>
+              <option value="under_assignment">Υπό Ανάθεση</option>
+              <option value="active">Ενεργή</option>
+              <option value="under_review">Υπό Εξέταση</option>
+              <option value="completed">Περατωμένη</option>
+              <option value="cancelled">Ακυρωμένη</option>
+            </select>
+            <label>Φίλτρο Ρόλου:</label>
+            <select id="role-filter">
+              <option value="">Όλα</option>
+              <option value="supervisor">Επιβλέπων</option>
+              <option value="member">Μέλος Τριμελούς</option>
+            </select>
+            <button onclick="exportTheses('csv')" class="btn btn-secondary">Εξαγωγή CSV</button>
+            <button onclick="exportTheses('json')" class="btn btn-secondary">Εξαγωγή JSON</button>
+          </div>
+          <div id="thesis-list" class="list-block"></div>
+          <div id="thesis-details" style="display:none;">
+            <div id="thesis-actions"></div>
+            <div id="thesis-timeline"></div>
+            <div id="thesis-grades"></div>
+            <div id="thesis-files"></div>
+          </div>
+        </section>
+        <!-- 4. Προβολή προσκλήσεων συμμετοχής σε τριμελή -->
+        <section id="invitations" style="display:none;">
+          <h2 class="section-title">Προσκλήσεις Τριμελούς Επιτροπής</h2>
+          <div id="invitation-list" class="list-block"></div>
+        </section>
+        <!-- 5. Προβολή στατιστικών -->
+        <section id="stats" style="display:none;">
+          <h2 class="section-title">Στατιστικά Διπλωματικών</h2>
+          <div class="charts-block">
+            <canvas id="completionTimeChart" width="400" height="200"></canvas>
+            <canvas id="gradeChart" width="400" height="200"></canvas>
+            <canvas id="countChart" width="400" height="200"></canvas>
+          </div>
+          <div id="stats-summary" class="summary-block"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script>
+    function showSection(id) {
+      document.querySelectorAll('section').forEach(sec => sec.style.display = 'none');
+      document.getElementById(id).style.display = 'block';
+    }
+    document.getElementById('logout-btn').onclick = function() {
+      localStorage.removeItem('token');
+      window.location.href = '/login.html';
+    };
+
+    // Helper: Get JWT token for authorization
+function getToken() {
+  return localStorage.getItem('token');
+}
+
+// Helper: Set Authorization header
+function authHeaders() {
+  return {
+    'Authorization': 'Bearer ' + getToken(),
+    'Content-Type': 'application/json'
+  };
+}
+
+// 1. Load topics (Θέματα προς Ανάθεση)
+async function loadTopics() {
+  const res = await fetch('/api/professor/topics', { headers: authHeaders() });
+  const topics = await res.json();
+  const list = document.getElementById('topic-list');
+  list.innerHTML = topics.map(t =>
+    `<div>
+      <strong>${t.title}</strong>
+      <p>${t.description}</p>
+      ${t.description_pdf_url ? `<a href="${t.description_pdf_url}" target="_blank">PDF</a>` : ''}
+      <button onclick="editTopic(${t.id})">Επεξεργασία</button>
+    </div>`
+  ).join('');
+}
+document.getElementById('create-topic-form').onsubmit = async function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  const res = await fetch('/api/professor/topics', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + getToken() },
+    body: formData
+  });
+  if (res.ok) loadTopics();
+};
+function editTopic(id) {
+  // Show edit form (implement as needed)
+}
+
+// 2. Assign topic to student
+async function searchStudent() {
+  const query = document.querySelector('[name="student_search"]').value;
+  // Implement backend search endpoint for students
+  const res = await fetch(`/api/students/search?q=${encodeURIComponent(query)}`, { headers: authHeaders() });
+  const students = await res.json();
+  const results = document.getElementById('student-results');
+  results.innerHTML = students.map(s =>
+    `<div>${s.name} ${s.surname} (${s.id})
+      <button onclick="assignTopicToStudent(${s.id})">Ανάθεση</button>
+    </div>`
+  ).join('');
+}
+async function assignTopicToStudent(studentId) {
+  // Show available topics for assignment
+  // Implement UI to select topic and assign
+}
+
+// 3. Load theses list
+async function loadTheses() {
+  const status = document.getElementById('status-filter').value;
+  const role = document.getElementById('role-filter').value;
+  const res = await fetch(`/api/professor/theses?status=${status}&role=${role}`, { headers: authHeaders() });
+  const theses = await res.json();
+  const list = document.getElementById('thesis-list');
+  list.innerHTML = theses.map(t =>
+    `<div>
+      <strong>${t.title}</strong> (${t.status})
+      <button onclick="showThesisDetails(${t.id})">Λεπτομέρειες</button>
+    </div>`
+  ).join('');
+}
+document.getElementById('status-filter').onchange = loadTheses;
+document.getElementById('role-filter').onchange = loadTheses;
+
+// 4. Load committee invitations
+async function loadInvitations() {
+  const res = await fetch('/api/professor/committee-invitations', { headers: authHeaders() });
+  const invitations = await res.json();
+  const list = document.getElementById('invitation-list');
+  list.innerHTML = invitations.map(i =>
+    `<div>
+      ${i.thesis_title} - ${i.status}
+      <button onclick="respondInvitation(${i.id}, 'accept')">Αποδοχή</button>
+      <button onclick="respondInvitation(${i.id}, 'reject')">Απόρριψη</button>
+    </div>`
+  ).join('');
+}
+async function respondInvitation(id, action) {
+  await fetch(`/api/professor/committee-invitations/${id}/${action}`, {
+    method: 'POST',
+    headers: authHeaders()
+  });
+  loadInvitations();
+}
+
+// 5. Load statistics
+async function loadStats() {
+  const res = await fetch('/api/professor/stats', { headers: authHeaders() });
+  const stats = await res.json();
+  // Update charts with stats data
+  // Example for completionTimeChart:
+  completionTimeChart.data.datasets[0].data = [
+    Math.round(stats.avg_completion_days.supervised / 30), // months
+    Math.round(stats.avg_completion_days.committee / 30)
+  ];
+  completionTimeChart.update();
+  gradeChart.data.datasets[0].data = [
+    stats.avg_grade.supervised,
+    stats.avg_grade.committee
+  ];
+  gradeChart.update();
+  countChart.data.datasets[0].data = [
+    stats.total_theses.supervised,
+    stats.total_theses.committee
+  ];
+  countChart.update();
+  document.getElementById('stats-summary').innerHTML =
+    `<p>Σύνολο ως Επιβλέπων: ${stats.total_theses.supervised}</p>
+     <p>Σύνολο ως Μέλος Τριμελούς: ${stats.total_theses.committee}</p>`;
+}
+
+// 6. Thesis management actions (details, notes, grades, etc.)
+async function showThesisDetails(id) {
+  const res = await fetch(`/api/professor/theses/${id}`, { headers: authHeaders() });
+  const thesis = await res.json();
+  // Populate thesis-details section with thesis info and management actions
+  // Implement further AJAX calls for notes, grades, invitations, etc.
+}
+
+// Initial load
+document.addEventListener('DOMContentLoaded', function() {
+  loadTopics();
+  loadTheses();
+  loadInvitations();
+  loadStats();
+});
+  </script>
+</body>
+</html>
